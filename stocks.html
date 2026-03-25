@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Portfolio - الأسهم</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .controls { background: rgba(26, 31, 46, 0.8); border: 1px solid rgba(212, 165, 116, 0.2); border-radius: 12px; padding: 24px; margin-bottom: 30px; display: grid; grid-template-columns: 1fr 1fr auto; gap: 15px; align-items: flex-end; }
+        .search-container { position: relative; }
+        .search-dropdown { position: absolute; top: 100%; right: 0; background: rgba(26, 31, 46, 0.95); border: 1px solid rgba(212, 165, 116, 0.2); border-radius: 6px; max-height: 200px; overflow-y: auto; width: 100%; z-index: 100; display: none; }
+        .search-dropdown.show { display: block; }
+        .dropdown-item { padding: 10px; cursor: pointer; transition: all 0.2s; border-bottom: 1px solid rgba(212, 165, 116, 0.1); }
+        .dropdown-item:hover { background: rgba(212, 165, 116, 0.1); }
+        .table-card { background: rgba(26, 31, 46, 0.8); border: 1px solid rgba(212, 165, 116, 0.2); border-radius: 12px; padding: 24px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th { padding: 12px; text-align: right; font-weight: 700; color: var(--text-secondary); font-size: 11px; border-bottom: 1px solid rgba(212, 165, 116, 0.2); text-transform: uppercase; }
+        td { padding: 12px; border-bottom: 1px solid rgba(212, 165, 116, 0.1); font-size: 13px; }
+        .action-btn { padding: 6px 12px; background: rgba(212, 165, 116, 0.2); border: 1px solid #d4a574; color: #d4a574; border-radius: 4px; cursor: pointer; font-family: 'Tajawal', sans-serif; font-size: 11px; margin-left: 5px; transition: all 0.3s; }
+        .action-btn:hover { background: #d4a574; color: #0f1419; }
+        .delete-btn { border-color: #ff6b6b; color: #ff6b6b; background: rgba(255, 107, 107, 0.1); }
+        .delete-btn:hover { background: #ff6b6b; color: white; }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); align-items: center; justify-content: center; z-index: 1000; overflow-y: auto; padding: 20px; }
+        .modal.show { display: flex; }
+        .modal-content { background: var(--secondary-dark); border: 1px solid rgba(212, 165, 116, 0.2); border-radius: 12px; padding: 40px; max-width: 600px; width: 100%; }
+        .modal-title { font-size: 24px; font-weight: 800; margin-bottom: 20px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
+        .modal-btn { flex: 1; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-family: 'Tajawal', sans-serif; font-weight: 700; transition: all 0.3s; }
+        .modal-btn.primary { background: linear-gradient(135deg, #d4a574 0%, #e8c4a0 100%); color: #0f1419; }
+        .modal-btn.primary:hover { opacity: 0.9; }
+        .modal-btn.secondary { background: rgba(0, 0, 0, 0.3); color: #ffffff; border: 1px solid rgba(212, 165, 116, 0.2); }
+        .close { font-size: 28px; cursor: pointer; position: absolute; right: 20px; top: 20px; color: var(--text-secondary); border: none; background: none; }
+        .empty-message { text-align: center; padding: 40px; color: var(--text-secondary); }
+        @media (max-width: 768px) { .controls { grid-template-columns: 1fr; } .form-row { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">PRO PORTFOLIO</div>
+        <nav class="nav">
+            <a href="dashboard.html">لوحة التحكم</a>
+            <a href="stocks.html" class="active">الأسهم</a>
+            <a href="analytics.html">التحليلات</a>
+            <a href="import-export.html">الاستيراد/التصدير</a>
+            <a href="settings.html">الإعدادات</a>
+        </nav>
+        <div class="user-section">
+            <div class="user-info">
+                <div class="user-name" id="userName">-</div>
+                <div class="user-email" id="userEmail">-</div>
+            </div>
+            <button class="logout-btn" id="logoutBtn">خروج</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1 class="title">إدارة الأسهم</h1>
+
+        <div class="controls">
+            <div class="search-container">
+                <label style="display: block; margin-bottom: 8px; font-size: 12px; font-weight: 600; color: var(--text-secondary);">البحث عن سهم</label>
+                <input type="text" id="searchInput" placeholder="ابحث بـ الاسم...">
+                <div id="searchDropdown" class="search-dropdown"></div>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 8px; font-size: 12px; font-weight: 600; color: var(--text-secondary);">فلترة حسب القطاع</label>
+                <select id="filterCategory">
+                    <option value="">كل القطاعات</option>
+                    <option value="قطاع مالي">قطاع مالي</option>
+                    <option value="قطاع عقاري">قطاع عقاري</option>
+                    <option value="قطاع صحي">قطاع صحي</option>
+                    <option value="الاتصالات">الاتصالات</option>
+                    <option value="تكنولوجيا المعلومات">تكنولوجيا المعلومات</option>
+                    <option value="الأغذية والمشروبات">الأغذية والمشروبات</option>
+                    <option value="الأسمدة والكيماويات">الأسمدة والكيماويات</option>
+                    <option value="مواد أساسية">مواد أساسية</option>
+                    <option value="الطاقة">الطاقة</option>
+                    <option value="التأمين">التأمين</option>
+                    <option value="أخرى">أخرى</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" id="addBtn">+ إضافة سهم</button>
+        </div>
+
+        <div class="table-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>السهم</th>
+                        <th>القطاع</th>
+                        <th>سعر الشراء</th>
+                        <th>العدد</th>
+                        <th>الإجمالي</th>
+                        <th>السعر الحالي</th>
+                        <th>P/E</th>
+                        <th>EPS</th>
+                        <th>ROE %</th>
+                        <th>الأرباح</th>
+                        <th>النسبة</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="stocksBody">
+                    <tr><td colspan="13" class="empty-message">لا توجد أسهم</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <button class="close" onclick="closeModal()">&times;</button>
+            <h2 class="modal-title">إضافة سهم جديد</h2>
+            <form id="addForm" onsubmit="submitForm(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>اسم السهم</label>
+                        <input type="text" id="stockName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>القطاع</label>
+                        <select id="category" required>
+                            <option value="">اختر قطاع</option>
+                            <option value="قطاع مالي">قطاع مالي</option>
+                            <option value="قطاع عقاري">قطاع عقاري</option>
+                            <option value="قطاع صحي">قطاع صحي</option>
+                            <option value="الاتصالات">الاتصالات</option>
+                            <option value="تكنولوجيا المعلومات">تكنولوجيا المعلومات</option>
+                            <option value="الأغذية والمشروبات">الأغذية والمشروبات</option>
+                            <option value="الأسمدة والكيماويات">الأسمدة والكيماويات</option>
+                            <option value="مواد أساسية">مواد أساسية</option>
+                            <option value="الطاقة">الطاقة</option>
+                            <option value="التأمين">التأمين</option>
+                            <option value="أخرى">أخرى</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>سعر الشراء (ج.م)</label>
+                        <input type="number" id="purchasePrice" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>العدد</label>
+                        <input type="number" id="quantity" min="1" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>السعر الحالي (ج.م)</label>
+                        <input type="number" id="currentPrice" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>المضاعفة (P/E)</label>
+                        <input type="number" id="pe" step="0.01" placeholder="مثال: 15.5">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>الربحية (EPS) (ج.م)</label>
+                        <input type="number" id="eps" step="0.01" placeholder="الربح لكل سهم">
+                    </div>
+                    <div class="form-group">
+                        <label>القيمة الدفترية (ج.م)</label>
+                        <input type="number" id="bookValue" step="0.01" placeholder="القيمة الدفترية">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>العائد على الملكية (ROE) %</label>
+                        <input type="number" id="roe" step="0.01" placeholder="مثال: 15.5">
+                    </div>
+                    <div class="form-group">
+                        <label>العائد على الأصول (ROA) %</label>
+                        <input type="number" id="roa" step="0.01" placeholder="مثال: 10.2">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>ملاحظات</label>
+                    <input type="text" id="notes" placeholder="ملاحظاتك (اختياري)">
+                </div>
+
+                <div class="modal-buttons">
+                    <button type="button" class="modal-btn secondary" onclick="closeModal()">إلغاء</button>
+                    <button type="submit" class="modal-btn primary">إضافة السهم</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getDatabase, ref, get, set, push, remove, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+
+        const config = {
+            apiKey: "AIzaSyAsL7bSa9ztYVype-TrVN1RG921L668uUQ",
+            authDomain: "pro-portfolio-71679.firebaseapp.com",
+            databaseURL: "https://pro-portfolio-71679-default-rtdb.firebaseio.com",
+            projectId: "pro-portfolio-71679",
+            storageBucket: "pro-portfolio-71679.firebasestorage.app",
+            messagingSenderId: "238356081205",
+            appId: "1:238356081205:web:1a88fb9eff5661a1b75f7c"
+        };
+
+        const app = initializeApp(config);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let allStocks = [];
+        let displayedStocks = [];
+        let currentUser = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            currentUser = user;
+            document.getElementById('userEmail').textContent = user.email;
+
+            try {
+                const userRef = ref(db, 'users/' + user.uid);
+                const snap = await get(userRef);
+                if (snap.exists()) {
+                    document.getElementById('userName').textContent = snap.val().name;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+
+            loadStocks();
+        });
+
+        function loadStocks() {
+            onValue(ref(db, 'stocks/' + currentUser.uid), (snap) => {
+                allStocks = [];
+                if (snap.exists()) {
+                    Object.entries(snap.val()).forEach(([key, val]) => {
+                        allStocks.push({ ...val, id: key });
+                    });
+                }
+                displayedStocks = [...allStocks];
+                renderTable();
+                updateSearchDropdown();
+            });
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('stocksBody');
+
+            if (displayedStocks.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="13" class="empty-message">لا توجد أسهم</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = displayedStocks.map((s, i) => {
+                const invest = s.purchasePrice * s.quantity;
+                const curr = s.currentPrice * s.quantity;
+                const profit = curr - invest;
+                const pct = invest > 0 ? (profit / invest * 100).toFixed(2) : 0;
+                return `<tr>
+                    <td>${i + 1}</td>
+                    <td>${s.name}</td>
+                    <td>${s.category}</td>
+                    <td>${s.purchasePrice}</td>
+                    <td>${s.quantity}</td>
+                    <td>${invest.toFixed(2)}</td>
+                    <td>${s.currentPrice}</td>
+                    <td>${s.pe || '-'}</td>
+                    <td>${s.eps || '-'}</td>
+                    <td>${s.roe || '-'}${s.roe ? '%' : ''}</td>
+                    <td style="color: ${profit >= 0 ? '#7dd87d' : '#ff6b6b'}">${profit.toFixed(2)}</td>
+                    <td style="color: ${profit >= 0 ? '#7dd87d' : '#ff6b6b'}">${pct}%</td>
+                    <td>
+                        <button class="action-btn" onclick="editStock('${s.id}')">تعديل</button>
+                        <button class="action-btn delete-btn" onclick="deleteStock('${s.id}')">حذف</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function updateSearchDropdown() {
+            const dropdown = document.getElementById('searchDropdown');
+            const uniqueNames = [...new Set(allStocks.map(s => s.name))];
+            
+            dropdown.innerHTML = uniqueNames.map(name => 
+                `<div class="dropdown-item" onclick="selectFromDropdown('${name}')">${name}</div>`
+            ).join('');
+        }
+
+        window.selectFromDropdown = function(name) {
+            document.getElementById('searchInput').value = name;
+            document.getElementById('searchDropdown').classList.remove('show');
+            filterStocks();
+        };
+
+        document.getElementById('searchInput').addEventListener('focus', () => {
+            document.getElementById('searchDropdown').classList.add('show');
+        });
+
+        document.getElementById('searchInput').addEventListener('blur', () => {
+            setTimeout(() => {
+                document.getElementById('searchDropdown').classList.remove('show');
+            }, 200);
+        });
+
+        document.getElementById('searchInput').addEventListener('input', filterStocks);
+        document.getElementById('filterCategory').addEventListener('change', filterStocks);
+
+        function filterStocks() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const category = document.getElementById('filterCategory').value;
+
+            displayedStocks = allStocks.filter(s => {
+                const matchSearch = s.name.toLowerCase().includes(search);
+                const matchCategory = !category || s.category === category;
+                return matchSearch && matchCategory;
+            });
+
+            renderTable();
+        }
+
+        window.submitForm = async function(e) {
+            e.preventDefault();
+            const stock = {
+                name: document.getElementById('stockName').value.toUpperCase(),
+                category: document.getElementById('category').value,
+                purchasePrice: parseFloat(document.getElementById('purchasePrice').value),
+                quantity: parseInt(document.getElementById('quantity').value),
+                currentPrice: parseFloat(document.getElementById('currentPrice').value),
+                pe: parseFloat(document.getElementById('pe').value) || null,
+                eps: parseFloat(document.getElementById('eps').value) || null,
+                bookValue: parseFloat(document.getElementById('bookValue').value) || null,
+                roe: parseFloat(document.getElementById('roe').value) || null,
+                roa: parseFloat(document.getElementById('roa').value) || null,
+                notes: document.getElementById('notes').value || '',
+                date: new Date().toISOString()
+            };
+
+            try {
+                await push(ref(db, 'stocks/' + currentUser.uid), stock);
+                closeModal();
+                document.getElementById('addForm').reset();
+            } catch (error) {
+                alert('خطأ: ' + error.message);
+            }
+        };
+
+        window.deleteStock = async function(id) {
+            if (confirm('حذف هذا السهم؟')) {
+                try {
+                    await remove(ref(db, 'stocks/' + currentUser.uid + '/' + id));
+                } catch (error) {
+                    alert('خطأ: ' + error.message);
+                }
+            }
+        };
+
+        window.editStock = function(id) {
+            const stock = allStocks.find(s => s.id === id);
+            if (stock) {
+                document.getElementById('stockName').value = stock.name;
+                document.getElementById('category').value = stock.category;
+                document.getElementById('purchasePrice').value = stock.purchasePrice;
+                document.getElementById('quantity').value = stock.quantity;
+                document.getElementById('currentPrice').value = stock.currentPrice;
+                document.getElementById('pe').value = stock.pe || '';
+                document.getElementById('eps').value = stock.eps || '';
+                document.getElementById('bookValue').value = stock.bookValue || '';
+                document.getElementById('roe').value = stock.roe || '';
+                document.getElementById('roa').value = stock.roa || '';
+                document.getElementById('notes').value = stock.notes || '';
+                openModal();
+            }
+        };
+
+        window.openModal = function() {
+            document.getElementById('modal').classList.add('show');
+        };
+
+        window.closeModal = function() {
+            document.getElementById('modal').classList.remove('show');
+        };
+
+        document.getElementById('addBtn').addEventListener('click', () => {
+            document.getElementById('addForm').reset();
+            openModal();
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
