@@ -68,6 +68,12 @@
 <body>
     <header>
         <div class="logo">PRO PORTFOLIO</div>
+        <nav style="display: flex; gap: 20px;">
+            <a href="dashboard.html" style="padding: 10px 15px; background: transparent; border: none; color: #d4a574; cursor: pointer; font-family: 'Tajawal', sans-serif; font-weight: 600; text-decoration: none; border-bottom: 2px solid #d4a574;">لوحة التحكم</a>
+            <a href="analytics.html" style="padding: 10px 15px; background: transparent; border: none; color: #b0b0b0; cursor: pointer; font-family: 'Tajawal', sans-serif; font-weight: 600; text-decoration: none;">التحليلات</a>
+            <a href="import-export.html" style="padding: 10px 15px; background: transparent; border: none; color: #b0b0b0; cursor: pointer; font-family: 'Tajawal', sans-serif; font-weight: 600; text-decoration: none;">الاستيراد/التصدير</a>
+            <a href="settings.html" style="padding: 10px 15px; background: transparent; border: none; color: #b0b0b0; cursor: pointer; font-family: 'Tajawal', sans-serif; font-weight: 600; text-decoration: none;">الإعدادات</a>
+        </nav>
         <div style="display: flex; gap: 20px; align-items: center;">
             <div class="user-info">
                 <div class="user-name" id="userName">المستخدم</div>
@@ -230,7 +236,7 @@
         </div>
     </div>
 
-    <script type="module">
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
         import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
         import { getDatabase, ref, get, set, push, remove, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
@@ -467,13 +473,4 @@
 
         document.getElementById('addBtn').addEventListener('click', () => {
             document.getElementById('addForm').reset();
-            document.getElementById('modal').classList.add('show');
-        });
-
-        document.getElementById('logoutBtn').addEventListener('click', async () => {
-            await signOut(auth);
-            window.location.href = 'index.html';
-        });
-    </script>
-</body>
-</html>
+            document.getElementById('modal').classList.add('sh
