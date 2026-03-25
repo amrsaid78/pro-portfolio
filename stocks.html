@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Portfolio - الأسهم</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Tajawal', sans-serif; background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%); color: #ffffff; }
+        header { background: rgba(26, 31, 46, 0.9); border-bottom: 1px solid rgba(212, 165, 116, 0.2); padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+        .logo { font-size: 24px; font-weight: 800; color: #d4a574; }
+        .nav { display: flex; gap: 20px; flex-wrap: wrap; }
+        .nav a { padding: 10px 15px; background: transparent; border: none; color: #b0b0b0; cursor: pointer; font-family: 'Tajawal', sans-serif; font-weight: 600; text-decoration: none; transition: all 0.3s; }
+        .nav a:hover, .nav a.active { color: #d4a574; border-bottom: 2px solid #d4a574; }
+        .user-section { display: flex; gap: 20px; align-items: center; }
+        .user-info { text-align: right; }
+        .user-name { font-weight: 600; font-size: 14px; }
+        .user-email { font-size: 12px; color: #b0b0b0; }
+        .logout-btn { padding: 8px 16px; background: rgba(255, 107, 107, 0.2); border: 1px solid #ff6b6b; color: #ff9999; border-radius: 6px; cursor: pointer; font-family: 'Tajawal', sans-serif; font-weight: 600; transition: all 0.3s; }
+        .logout-btn:hover { background: rgba(255, 107, 107, 0.3); }
+        .container { max-width: 1200px; margin: 0 auto; padding: 40px; }
+        .title { font-size: 28px; font-weight: 800; margin-bottom: 30px; }
+        .controls { background: rgba(26, 31, 46, 0.8); border: 1px solid rgba(212, 165, 116, 0.2); border-radius: 12px; padding: 24px; margin-bottom: 30px; display: grid; grid-template-columns: 1fr 1fr auto; gap: 15px; align-items: flex-end; }
+        .search-group { display: flex; flex-direction: column; }
+        .search-group label { font-size: 12px; font-weight: 600; margin-bottom: 8px; color: #b0b0b0; }
+        .search-group input, .search-group select { padding: 10px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(212, 165, 116, 0.2); border-radius: 6px; color: #ffffff; font-family: 'Tajawal', sans-serif; }
+        .search-group input:focus, .search-group select:focus { outline: none; border-color: #d4a574; }
+        .add-btn { padding: 10px 20px; background: linear-gradient(135deg, #d4a574 0%, #e8c4a0 100%); border: none; border-radius: 6px; color: #0f1419; cursor: pointer; font-family: 'Tajawal', sans-serif; font-weight: 700; transition: all 0.3s; }
+        .add-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(212, 165, 116, 0.3); }
+        .table-card { background: rgba(26, 31, 46, 0.8); border: 1px solid rgba(212, 165, 116, 0.2); border-radius: 12px; padding: 24px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th { padding: 12px; text-align: right; font-weight: 700; color: #b0b0b0; font-size: 11px; border-bottom: 1px solid rgba(212, 165, 116, 0.2); text-transform: uppercase; }
+        td { padding: 12px; border-bottom: 1px solid rgba(212, 165, 116, 0.1); font-size: 13px; }
+        .action-btn { padding: 6px 12px; background: rgba(212, 165, 116, 0.2); border: 1px solid #d4a574; color: #d4a574; border-radius: 4px; cursor: pointer; font-family: 'Tajawal', sans-serif; font-size: 11px; margin-left: 5px; transition: all 0.3s; }
+        .action-btn:hover { background: #d4a574; color: #0f1419; }
+        .delete-btn { border-color: #ff6b6b; color: #ff6b6b; background: rgba(255, 107, 107, 0.1); }
+        .delete-btn:hover { background: #ff6b6b; color: white; }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); align-items: center; justify-content: center; z-index: 1000; overflow-y: auto; padding: 20px; }
+        .modal.show { display: flex; }
+        .modal-content { background: #1a1f2e; border: 1px solid rgba(212, 165, 116, 0.2); border-radius: 12px; padding: 40px; max-width: 600px; width: 100%; }
+        .modal-title { font-size: 24px; font-weight: 800; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; }
+        input, select { width: 100%; padding: 10px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(212, 165, 116, 0.2); border-radius: 6px; color: #ffffff; font-family: 'Tajawal', sans-serif; font-size: 14px; }
+        input:focus, select:focus { outline: none; border-color: #d4a574; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
+        .modal-btn { flex: 1; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-family: 'Tajawal', sans-serif; font-weight: 700; transition: all 0.3s; }
+        .modal-btn.primary { background: linear-gradient(135deg, #d4a574 0%, #e8c4a0 100%); color: #0f1419; }
+        .modal-btn.primary:hover { opacity: 0.9; }
+        .modal-btn.secondary { background: rgba(0, 0, 0, 0.3); color: #ffffff; border: 1px solid rgba(212, 165, 116, 0.2); }
+        .modal-btn.secondary:hover { background: rgba(0, 0, 0, 0.4); }
+        .close { font-size: 28px; cursor: pointer; position: absolute; right: 20px; top: 20px; color: #b0b0b0; border: none; background: none; }
+        .empty-message { text-align: center; padding: 40px; color: #b0b0b0; }
+        @media (max-width: 768px) {
+            header { flex-direction: column; align-items: flex-start; }
+            .container { padding: 20px; }
+            .nav { flex-direction: column; width: 100%; }
+            .user-section { flex-direction: column; width: 100%; }
+            .controls { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+            .table-card { overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">PRO PORTFOLIO</div>
+        <nav class="nav">
+            <a href="dashboard.html">لوحة التحكم</a>
+            <a href="stocks.html" class="active">الأسهم</a>
+            <a href="analytics.html">التحليلات</a>
+            <a href="import-export.html">الاستيراد/التصدير</a>
+            <a href="settings.html">الإعدادات</a>
+        </nav>
+        <div class="user-section">
+            <div class="user-info">
+                <div class="user-name" id="userName">المستخدم</div>
+                <div class="user-email" id="userEmail">email@example.com</div>
+            </div>
+            <button class="logout-btn" id="logoutBtn">خروج</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1 class="title">إدارة الأسهم</h1>
+
+        <div class="controls">
+            <div class="search-group">
+                <label>البحث عن سهم</label>
+                <input type="text" id="searchInput" placeholder="ابحث بـ الاسم...">
+            </div>
+            <div class="search-group">
+                <label>فلترة حسب القطاع</label>
+                <select id="filterCategory">
+                    <option value="">كل القطاعات</option>
+                    <option value="قطاع مالي">قطاع مالي</option>
+                    <option value="قطاع عقاري">قطاع عقاري</option>
+                    <option value="قطاع صحي">قطاع صحي</option>
+                    <option value="الاتصالات">الاتصالات</option>
+                    <option value="تكنولوجيا المعلومات">تكنولوجيا المعلومات</option>
+                    <option value="الأغذية والمشروبات">الأغذية والمشروبات</option>
+                    <option value="الأسمدة والكيماويات">الأسمدة والكيماويات</option>
+                    <option value="مواد أساسية">مواد أساسية</option>
+                    <option value="الطاقة">الطاقة</option>
+                    <option value="التأمين">التأمين</option>
+                    <option value="أخرى">أخرى</option>
+                </select>
+            </div>
+            <button class="add-btn" id="addBtn">+ إضافة سهم</button>
+        </div>
+
+        <div class="table-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>السهم</th>
+                        <th>القطاع</th>
+                        <th>سعر الشراء</th>
+                        <th>العدد</th>
+                        <th>الإجمالي</th>
+                        <th>السعر الحالي</th>
+                        <th>P/E</th>
+                        <th>EPS</th>
+                        <th>ROE %</th>
+                        <th>الأرباح</th>
+                        <th>النسبة</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="stocksBody">
+                    <tr><td colspan="13" class="empty-message">لا توجد أسهم</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <button class="close" onclick="closeModal()">&times;</button>
+            <h2 class="modal-title">إضافة سهم جديد</h2>
+            <form id="addForm" onsubmit="submitForm(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>اسم السهم</label>
+                        <input type="text" id="stockName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>القطاع</label>
+                        <select id="category" required>
+                            <option value="">اختر قطاع</option>
+                            <option value="قطاع مالي">قطاع مالي</option>
+                            <option value="قطاع عقاري">قطاع عقاري</option>
+                            <option value="قطاع صحي">قطاع صحي</option>
+                            <option value="الاتصالات">الاتصالات</option>
+                            <option value="تكنولوجيا المعلومات">تكنولوجيا المعلومات</option>
+                            <option value="الأغذية والمشروبات">الأغذية والمشروبات</option>
+                            <option value="الأسمدة والكيماويات">الأسمدة والكيماويات</option>
+                            <option value="مواد أساسية">مواد أساسية</option>
+                            <option value="الطاقة">الطاقة</option>
+                            <option value="التأمين">التأمين</option>
+                            <option value="أخرى">أخرى</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>سعر الشراء (ج.م)</label>
+                        <input type="number" id="purchasePrice" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>العدد</label>
+                        <input type="number" id="quantity" min="1" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>السعر الحالي (ج.م)</label>
+                        <input type="number" id="currentPrice" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>المضاعفة (P/E)</label>
+                        <input type="number" id="pe" step="0.01" placeholder="مثال: 15.5">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>الربحية (EPS) (ج.م)</label>
+                        <input type="number" id="eps" step="0.01" placeholder="الربح لكل سهم">
+                    </div>
+                    <div class="form-group">
+                        <label>القيمة الدفترية (ج.م)</label>
+                        <input type="number" id="bookValue" step="0.01" placeholder="القيمة الدفترية">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>العائد على الملكية (ROE) %</label>
+                        <input type="number" id="roe" step="0.01" placeholder="مثال: 15.5">
+                    </div>
+                    <div class="form-group">
+                        <label>العائد على الأصول (ROA) %</label>
+                        <input type="number" id="roa" step="0.01" placeholder="مثال: 10.2">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>ملاحظات</label>
+                    <input type="text" id="notes" placeholder="ملاحظاتك (اختياري)">
+                </div>
+
+                <div class="modal-buttons">
+                    <button type="button" class="modal-btn secondary" onclick="closeModal()">إلغاء</button>
+                    <button type="submit" class="modal-btn primary">إضافة السهم</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getDatabase, ref, get, set, push, remove, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+
+        const config = {
+            apiKey: "AIzaSyAsL7bSa9ztYVype-TrVN1RG921L668uUQ",
+            authDomain: "pro-portfolio-71679.firebaseapp.com",
+            databaseURL: "https://pro-portfolio-71679-default-rtdb.firebaseio.com",
+            projectId: "pro-portfolio-71679",
+            storageBucket: "pro-portfolio-71679.firebasestorage.app",
+            messagingSenderId: "238356081205",
+            appId: "1:238356081205:web:1a88fb9eff5661a1b75f7c"
+        };
+
+        const app = initializeApp(config);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let stocks = [];
+        let allStocks = [];
+        let currentUserId = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            currentUserId = user.uid;
+            document.getElementById('userEmail').textContent = user.email;
+
+            const userRef = ref(db, 'users/' + user.uid);
+            const snap = await get(userRef);
+            if (snap.exists()) {
+                document.getElementById('userName').textContent = snap.val().name || 'المستخدم';
+            }
+
+            loadStocks();
+        });
+
+        function loadStocks() {
+            onValue(ref(db, 'stocks/' + currentUserId), (snap) => {
+                allStocks = [];
+                if (snap.exists()) {
+                    Object.entries(snap.val()).forEach(([key, val]) => {
+                        allStocks.push({ ...val, id: key });
+                    });
+                }
+                stocks = [...allStocks];
+                renderTable();
+            });
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('stocksBody');
+            
+            if (stocks.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="13" class="empty-message">لا توجد أسهم</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = stocks.map((s, i) => {
+                const invest = s.purchasePrice * s.quantity;
+                const curr = s.currentPrice * s.quantity;
+                const profit = curr - invest;
+                const pct = invest > 0 ? (profit / invest * 100).toFixed(2) : 0;
+                return `<tr>
+                    <td>${i + 1}</td>
+                    <td>${s.name}</td>
+                    <td>${s.category}</td>
+                    <td>${s.purchasePrice}</td>
+                    <td>${s.quantity}</td>
+                    <td>${invest.toFixed(2)}</td>
+                    <td>${s.currentPrice}</td>
+                    <td>${s.pe || '-'}</td>
+                    <td>${s.eps || '-'}</td>
+                    <td>${s.roe || '-'}${s.roe ? '%' : ''}</td>
+                    <td style="color: ${profit >= 0 ? '#7dd87d' : '#ff6b6b'}">${profit.toFixed(2)}</td>
+                    <td style="color: ${profit >= 0 ? '#7dd87d' : '#ff6b6b'}">${pct}%</td>
+                    <td>
+                        <button class="action-btn" onclick="editStock('${s.id}')">تعديل</button>
+                        <button class="action-btn delete-btn" onclick="deleteStock('${s.id}')">حذف</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const search = e.target.value.toLowerCase();
+            stocks = allStocks.filter(s => s.name.toLowerCase().includes(search));
+            renderTable();
+        });
+
+        document.getElementById('filterCategory').addEventListener('change', (e) => {
+            const category = e.target.value;
+            stocks = category ? allStocks.filter(s => s.category === category) : [...allStocks];
+            renderTable();
+        });
+
+        window.submitForm = async function(e) {
+            e.preventDefault();
+            const stock = {
+                name: document.getElementById('stockName').value.toUpperCase(),
+                category: document.getElementById('category').value,
+                purchasePrice: parseFloat(document.getElementById('purchasePrice').value),
+                quantity: parseInt(document.getElementById('quantity').value),
+                currentPrice: parseFloat(document.getElementById('currentPrice').value),
+                pe: parseFloat(document.getElementById('pe').value) || null,
+                eps: parseFloat(document.getElementById('eps').value) || null,
+                bookValue: parseFloat(document.getElementById('bookValue').value) || null,
+                roe: parseFloat(document.getElementById('roe').value) || null,
+                roa: parseFloat(document.getElementById('roa').value) || null,
+                notes: document.getElementById('notes').value || '',
+                date: new Date().toISOString()
+            };
+
+            try {
+                await push(ref(db, 'stocks/' + currentUserId), stock);
+                closeModal();
+                document.getElementById('addForm').reset();
+            } catch (error) {
+                alert('خطأ: ' + error.message);
+            }
+        };
+
+        window.deleteStock = async function(id) {
+            if (confirm('حذف هذا السهم؟')) {
+                try {
+                    await remove(ref(db, 'stocks/' + currentUserId + '/' + id));
+                } catch (error) {
+                    alert('خطأ: ' + error.message);
+                }
+            }
+        };
+
+        window.editStock = function(id) {
+            const stock = allStocks.find(s => s.id === id);
+            if (stock) {
+                document.getElementById('stockName').value = stock.name;
+                document.getElementById('category').value = stock.category;
+                document.getElementById('purchasePrice').value = stock.purchasePrice;
+                document.getElementById('quantity').value = stock.quantity;
+                document.getElementById('currentPrice').value = stock.currentPrice;
+                document.getElementById('pe').value = stock.pe || '';
+                document.getElementById('eps').value = stock.eps || '';
+                document.getElementById('bookValue').value = stock.bookValue || '';
+                document.getElementById('roe').value = stock.roe || '';
+                document.getElementById('roa').value = stock.roa || '';
+                document.getElementById('notes').value = stock.notes || '';
+                document.getElementById('modal').classList.add('show');
+            }
+        };
+
+        window.closeModal = function() {
+            document.getElementById('modal').classList.remove('show');
+        };
+
+        document.getElementById('addBtn').addEventListener('click', () => {
+            document.getElementById('addForm').reset();
+            document.getElementById('modal').classList.add('show');
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await signOut(auth);
+            window.location.href = 'index.html';
+        });
+    </script>
+</body>
+</html>
