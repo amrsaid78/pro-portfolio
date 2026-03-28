@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Portfolio - لوحة التحكم</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .charts { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 40px; }
+        .chart-container { position: relative; height: 300px; }
+        @media (max-width: 768px) { .charts { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">PRO PORTFOLIO</div>
+        <nav class="nav">
+            <a href="dashboard.html" class="active">لوحة التحكم</a>
+            <a href="stocks.html">الأسهم</a>
+            <a href="analytics.html">التحليلات</a>
+            <a href="import-export.html">الاستيراد/التصدير</a>
+            <a href="settings.html">الإعدادات</a>
+        </nav>
+        <div class="user-section">
+            <div class="user-info">
+                <div class="user-name" id="userName">-</div>
+                <div class="user-email" id="userEmail">-</div>
+            </div>
+            <button class="logout-btn" id="logoutBtn" onclick="handleLogout()">خروج</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1 class="title">لوحة التحكم</h1>
+
+        <div class="kpis">
+            <div class="kpi">
+                <div class="kpi-label">إجمالي المشتريات</div>
+                <div class="kpi-value" id="totalInvest">0 ج.م</div>
+                <div class="kpi-change">من <span id="totalCount">0</span> سهم</div>
+            </div>
+            <div class="kpi">
+                <div class="kpi-label">إجمالي الأرباح</div>
+                <div class="kpi-value" id="totalProfit">0 ج.م</div>
+                <div class="kpi-change" id="profitPct">+0%</div>
+            </div>
+            <div class="kpi">
+                <div class="kpi-label">القيمة الحالية</div>
+                <div class="kpi-value" id="currentVal">0 ج.م</div>
+                <div class="kpi-change" id="changePct">+0%</div>
+            </div>
+        </div>
+
+        <div class="charts">
+            <div class="chart-card">
+                <div class="chart-title">أداء المحفظة</div>
+                <div class="chart-container"><canvas id="performanceChart"></canvas></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div class="chart-card">
+                    <div class="chart-title">توزيع الاستثمار</div>
+                    <div class="chart-container"><canvas id="distributionChart"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">أداء الأسهم</div>
+                    <div class="chart-container"><canvas id="performancePerChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+
+        const config = {
+            apiKey: "AIzaSyAcfyosJ7Se5-4PSfKbpZPXE4PU_STkwes",
+            authDomain: "pro-portfolio-b5076.firebaseapp.com",
+            databaseURL: "https://pro-portfolio-b5076-default-rtdb.firebaseio.com",
+            projectId: "pro-portfolio-b5076",
+            storageBucket: "pro-portfolio-b5076.firebasestorage.app",
+            messagingSenderId: "492601419310",
+            appId: "1:492601419310:web:76af56c6eb39056e0e61bf"
+        };
+
+        const app = initializeApp(config);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let stocks = [];
+        let charts = {};
+        let currentUser = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            currentUser = user;
+            document.getElementById('userEmail').textContent = user.email;
+
+            try {
+                const userRef = ref(db, 'users/' + user.uid);
+                const snap = await get(userRef);
+                if (snap.exists()) {
+                    const name = snap.val().name;
+                    document.getElementById('userName').textContent = name;
+                    sessionStorage.setItem('userName', name);
+                }
+            } catch (error) {
+                console.error('Error loading user:', error);
+            }
+
+            loadStocks();
+        });
+
+        function loadStocks() {
+            try {
+                onValue(ref(db, 'stocks/' + currentUser.uid), (snap) => {
+                    stocks = [];
+                    if (snap.exists()) {
+                        Object.entries(snap.val()).forEach(([key, val]) => {
+                            stocks.push({ ...val, id: key });
+                        });
+                    }
+                    render();
+                });
+            } catch (error) {
+                console.error('Error loading stocks:', error);
+            }
+        }
+
+        function render() {
+            updateKPIs();
+            if (Object.keys(charts).length > 0) updateCharts();
+            else initCharts();
+        }
+
+        function updateKPIs() {
+            let totalInvest = 0, totalCurr = 0, totalQty = 0;
+            
+            stocks.forEach(s => {
+                // استخدم firstPurchase* إذا ما في purchases
+                let investAmount = (s.firstPurchasePrice || 0) * (s.firstQuantity || 0);
+                let currentQty = s.firstQuantity || 0;
+                
+                const currentValue = (s.currentPrice || 0) * currentQty;
+                
+                totalInvest += investAmount;
+                totalCurr += currentValue;
+                totalQty += currentQty;
+            });
+            
+            const profit = totalCurr - totalInvest;
+            const pct = totalInvest > 0 ? (profit / totalInvest * 100).toFixed(2) : 0;
+
+            document.getElementById('totalInvest').textContent = totalInvest.toFixed(2) + ' ج.م';
+            document.getElementById('totalProfit').textContent = profit.toFixed(2) + ' ج.م';
+            document.getElementById('currentVal').textContent = totalCurr.toFixed(2) + ' ج.م';
+            document.getElementById('totalCount').textContent = totalQty;
+
+            const profitEl = document.getElementById('profitPct');
+            profitEl.textContent = (profit >= 0 ? '+' : '') + pct + '%';
+            profitEl.style.color = profit >= 0 ? '#7dd87d' : '#ff6b6b';
+
+            const changeEl = document.getElementById('changePct');
+            changeEl.textContent = (profit >= 0 ? '+' : '') + pct + '%';
+            changeEl.style.color = profit >= 0 ? '#7dd87d' : '#ff6b6b';
+        }
+
+        function initCharts() {
+            if (stocks.length === 0) return;
+
+            const ctx1 = document.getElementById('performanceChart').getContext('2d');
+            charts.p = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: stocks.map(s => s.name),
+                    datasets: [{
+                        label: 'الأرباح',
+                        data: stocks.map(s => (s.currentPrice - s.purchasePrice) * s.quantity),
+                        borderColor: '#d4a574',
+                        backgroundColor: 'rgba(212, 165, 116, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(212, 165, 116, 0.1)' }, ticks: { color: '#b0b0b0' } }, x: { grid: { display: false }, ticks: { color: '#b0b0b0' } } } }
+            });
+
+            const ctx2 = document.getElementById('distributionChart').getContext('2d');
+            charts.d = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: stocks.map(s => s.name),
+                    datasets: [{ data: stocks.map(s => s.purchasePrice * s.quantity), backgroundColor: ['#d4a574', '#e8c4a0', '#c89968', '#e0b89c', '#d9a17a', '#e5b896', '#c99070', '#e2b08a'], borderColor: '#1a1f2e' }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#b0b0b0' } } } }
+            });
+
+            const ctx3 = document.getElementById('performancePerChart').getContext('2d');
+            charts.pp = new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: stocks.map(s => s.name),
+                    datasets: [{
+                        label: '%',
+                        data: stocks.map(s => ((s.currentPrice - s.purchasePrice) / s.purchasePrice * 100).toFixed(2)),
+                        backgroundColor: stocks.map(s => (s.currentPrice - s.purchasePrice) * s.quantity >= 0 ? '#4caf50' : '#ff6b6b')
+                    }]
+                },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(212, 165, 116, 0.1)' }, ticks: { color: '#b0b0b0' } }, y: { grid: { display: false }, ticks: { color: '#b0b0b0' } } } }
+            });
+        }
+
+        function updateCharts() {
+            if (stocks.length === 0) return;
+            if (charts.p) {
+                charts.p.data.labels = stocks.map(s => s.name);
+                charts.p.data.datasets[0].data = stocks.map(s => (s.currentPrice - s.purchasePrice) * s.quantity);
+                charts.p.update();
+            }
+            if (charts.d) {
+                charts.d.data.labels = stocks.map(s => s.name);
+                charts.d.data.datasets[0].data = stocks.map(s => s.purchasePrice * s.quantity);
+                charts.d.update();
+            }
+            if (charts.pp) {
+                charts.pp.data.labels = stocks.map(s => s.name);
+                charts.pp.data.datasets[0].data = stocks.map(s => ((s.currentPrice - s.purchasePrice) / s.purchasePrice * 100).toFixed(2));
+                charts.pp.data.datasets[0].backgroundColor = stocks.map(s => (s.currentPrice - s.purchasePrice) * s.quantity >= 0 ? '#4caf50' : '#ff6b6b');
+                charts.pp.update();
+            }
+        }
+
+        window.handleLogout = async function() {
+            try {
+                await signOut(auth);
+                sessionStorage.clear();
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        };
+    </script>
+</body>
+</html>
