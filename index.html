@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Portfolio - محفظة استثمارية</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .auth-container {
+            display: flex;
+            height: 100vh;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .auth-box {
+            max-width: 400px;
+            width: 100%;
+            background: rgba(26, 31, 46, 0.9);
+            border: 1px solid rgba(212, 165, 116, 0.2);
+            border-radius: 12px;
+            padding: 40px;
+        }
+        .auth-title {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+        .auth-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            border-bottom: 1px solid rgba(212, 165, 116, 0.2);
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        .tab-btn.active {
+            color: var(--accent-gold);
+            border-bottom-color: var(--accent-gold);
+        }
+        .form-content {
+            display: none;
+        }
+        .form-content.active {
+            display: block;
+        }
+        .form-switch {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .form-switch a {
+            color: var(--accent-gold);
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-box">
+            <div class="auth-title">PRO PORTFOLIO</div>
+            <div class="auth-subtitle">محفظة استثمارية احترافية</div>
+
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('login')">دخول</button>
+                <button class="tab-btn" onclick="switchTab('register')">تسجيل</button>
+            </div>
+
+            <!-- Login -->
+            <div id="login" class="form-content active">
+                <div id="loginMsg" class="message"></div>
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label>البريد الإلكتروني</label>
+                        <input type="email" id="loginEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label>كلمة المرور</label>
+                        <input type="password" id="loginPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">دخول</button>
+                </form>
+                <div class="form-switch">
+                    لا تملك حساب؟ <a onclick="switchTab('register')">اضغط هنا</a>
+                </div>
+            </div>
+
+            <!-- Register -->
+            <div id="register" class="form-content">
+                <div id="registerMsg" class="message"></div>
+                <form onsubmit="handleRegister(event)">
+                    <div class="form-group">
+                        <label>الاسم الكامل</label>
+                        <input type="text" id="registerName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>البريد الإلكتروني</label>
+                        <input type="email" id="registerEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label>كلمة المرور</label>
+                        <input type="password" id="registerPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label>تأكيد كلمة المرور</label>
+                        <input type="password" id="registerConfirm" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">إنشاء حساب</button>
+                </form>
+                <div class="form-switch">
+                    تملك حساب بالفعل؟ <a onclick="switchTab('login')">اضغط هنا</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+
+        const config = {
+            apiKey: "AIzaSyAcfyosJ7Se5-4PSfKbpZPXE4PU_STkwes",
+            authDomain: "pro-portfolio-b5076.firebaseapp.com",
+            databaseURL: "https://pro-portfolio-b5076-default-rtdb.firebaseio.com",
+            projectId: "pro-portfolio-b5076",
+            storageBucket: "pro-portfolio-b5076.firebasestorage.app",
+            messagingSenderId: "492601419310",
+            appId: "1:492601419310:web:76af56c6eb39056e0e61bf",
+            measurementId: "G-BVTBFP94PL"
+        };
+
+        const app = initializeApp(config);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        window.switchTab = function(tab) {
+            document.querySelectorAll('.form-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tab).classList.add('active');
+            event.target.classList.add('active');
+        };
+
+        window.handleLogin = async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const msg = document.getElementById('loginMsg');
+            msg.classList.remove('show', 'success', 'error');
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                msg.innerHTML = '✓ جاري الدخول...';
+                msg.classList.add('show', 'success');
+                setTimeout(() => window.location.href = 'dashboard.html', 1000);
+            } catch (error) {
+                msg.innerHTML = '✗ خطأ: ' + error.message;
+                msg.classList.add('show', 'error');
+            }
+        };
+
+        window.handleRegister = async function(e) {
+            e.preventDefault();
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirm = document.getElementById('registerConfirm').value;
+            const msg = document.getElementById('registerMsg');
+            msg.classList.remove('show', 'success', 'error');
+
+            if (password !== confirm) {
+                msg.innerHTML = '✗ كلمات المرور غير متطابقة';
+                msg.classList.add('show', 'error');
+                return;
+            }
+
+            try {
+                const result = await createUserWithEmailAndPassword(auth, email, password);
+                await set(ref(db, 'users/' + result.user.uid), {
+                    name: name,
+                    email: email,
+                    createdAt: new Date().toISOString()
+                });
+                msg.innerHTML = '✓ تم الإنشاء! جاري التوجيه...';
+                msg.classList.add('show', 'success');
+                setTimeout(() => window.location.href = 'dashboard.html', 1500);
+            } catch (error) {
+                msg.innerHTML = '✗ خطأ: ' + error.message;
+                msg.classList.add('show', 'error');
+            }
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                window.location.href = 'dashboard.html';
+            }
+        });
+    </script>
+</body>
+</html>
