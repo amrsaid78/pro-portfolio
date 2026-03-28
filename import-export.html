@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Portfolio - الاستيراد والتصدير</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        .section { background: rgba(26, 31, 46, 0.8); border: 1px solid rgba(212, 165, 116, 0.2); border-radius: 12px; padding: 30px; margin-bottom: 30px; }
+        .section-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; color: var(--accent-gold); border-bottom: 1px solid rgba(212, 165, 116, 0.2); padding-bottom: 15px; }
+        .upload-area { border: 2px dashed rgba(212, 165, 116, 0.3); border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.3s; }
+        .upload-area:hover { border-color: var(--accent-gold); background: rgba(212, 165, 116, 0.05); }
+        .upload-area.dragover { border-color: var(--accent-gold); background: rgba(212, 165, 116, 0.1); }
+        .upload-icon { font-size: 48px; margin-bottom: 15px; }
+        .upload-text { font-size: 16px; font-weight: 600; margin-bottom: 5px; }
+        .upload-hint { font-size: 12px; color: var(--text-secondary); }
+        input[type="file"] { display: none; }
+        .button-group { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 15px; }
+        .export-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+        .export-card { background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(212, 165, 116, 0.2); border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s; }
+        .export-card:hover { background: rgba(212, 165, 116, 0.1); border-color: var(--accent-gold); }
+        .export-icon { font-size: 32px; margin-bottom: 10px; }
+        .export-name { font-weight: 600; font-size: 14px; }
+        .preview-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .preview-table th { padding: 12px; text-align: right; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(212, 165, 116, 0.2); font-weight: 700; }
+        .preview-table td { padding: 10px 12px; border: 1px solid rgba(212, 165, 116, 0.1); }
+        pre { background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 6px; overflow-x: auto; color: var(--accent-gold); font-size: 12px; }
+        @media (max-width: 768px) { .button-group { flex-direction: column; } .btn { width: 100%; } }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">PRO PORTFOLIO</div>
+        <nav class="nav">
+            <a href="dashboard.html">لوحة التحكم</a>
+            <a href="stocks.html">الأسهم</a>
+            <a href="analytics.html">التحليلات</a>
+            <a href="import-export.html" class="active">الاستيراد/التصدير</a>
+            <a href="settings.html">الإعدادات</a>
+        </nav>
+        <div class="user-section">
+            <div class="user-info">
+                <div class="user-name" id="userName">-</div>
+                <div class="user-email" id="userEmail">-</div>
+            </div>
+            <button class="logout-btn" id="logoutBtn">خروج</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1 class="title">الاستيراد والتصدير</h1>
+
+        <!-- Export Section -->
+        <div class="section">
+            <div class="section-title">📤 تصدير البيانات</div>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">احفظ بيانات محفظتك بصيغة PDF أو CSV أو JSON</p>
+            
+            <div class="export-options">
+                <div class="export-card" onclick="exportPDF()">
+                    <div class="export-icon">📄</div>
+                    <div class="export-name">تصدير PDF</div>
+                </div>
+                <div class="export-card" onclick="exportCSV()">
+                    <div class="export-icon">📊</div>
+                    <div class="export-name">تصدير CSV</div>
+                </div>
+                <div class="export-card" onclick="exportJSON()">
+                    <div class="export-icon">📋</div>
+                    <div class="export-name">تصدير JSON</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Import Section -->
+        <div class="section">
+            <div class="section-title">📥 استيراد البيانات</div>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">استيراد أسهم من ملف CSV</p>
+            
+            <div id="importMsg" class="message"></div>
+
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">اسحب ملف CSV هنا</div>
+                <div class="upload-hint">أو اضغط لاختيار ملف</div>
+                <input type="file" id="fileInput" accept=".csv">
+            </div>
+
+            <div id="preview" style="display: none; margin-top: 30px;">
+                <h3 style="margin-bottom: 15px;">معاينة البيانات:</h3>
+                <table class="preview-table">
+                    <thead id="previewHead"></thead>
+                    <tbody id="previewBody"></tbody>
+                </table>
+                <div class="button-group" style="margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="importStocks()">استيراد الأسهم</button>
+                    <button class="btn btn-secondary" onclick="cancelImport()">إلغاء</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CSV Template -->
+        <div class="section">
+            <div class="section-title">📋 نموذج ملف CSV</div>
+            <p style="color: var(--text-secondary); margin-bottom: 15px;">صيغة الملف الصحيحة:</p>
+            <pre>name,purchasePrice,quantity,currentPrice,category,pe,eps,roe,roa,notes
+ADAWEE,25.5,100,28.0,قطاع مالي,12.5,2.24,15.5,8.2,سهم موثوق
+EBANK,15.0,50,16.5,قطاع مالي,10.2,1.62,12.0,6.5,أداء جيدة</pre>
+            <button class="btn btn-secondary" style="margin-top: 15px;" onclick="downloadTemplate()">تحميل نموذج</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getDatabase, ref, get, push } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+
+        const config = {
+            apiKey: "AIzaSyAcfyosJ7Se5-4PSfKbpZPXE4PU_STkwes",
+            authDomain: "pro-portfolio-b5076.firebaseapp.com",
+            databaseURL: "https://pro-portfolio-b5076-default-rtdb.firebaseio.com",
+            projectId: "pro-portfolio-b5076",
+            storageBucket: "pro-portfolio-b5076.firebasestorage.app",
+            messagingSenderId: "492601419310",
+            appId: "1:492601419310:web:76af56c6eb39056e0e61bf"
+        };
+
+        const app = initializeApp(config);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let stocks = [];
+        let currentUser = null;
+        let importedData = [];
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            currentUser = user;
+            document.getElementById('userEmail').textContent = user.email;
+
+            try {
+                const userRef = ref(db, 'users/' + user.uid);
+                const snap = await get(userRef);
+                if (snap.exists()) {
+                    document.getElementById('userName').textContent = snap.val().name;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+
+            loadStocks();
+        });
+
+        function loadStocks() {
+            const stocksRef = ref(db, 'stocks/' + currentUser.uid);
+            get(stocksRef).then(snap => {
+                stocks = [];
+                if (snap.exists()) {
+                    Object.entries(snap.val()).forEach(([key, val]) => {
+                        stocks.push({ ...val, id: key });
+                    });
+                }
+            });
+        }
+
+        window.exportPDF = function() {
+            const html = `
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        body { font-family: Arial, sans-serif; direction: rtl; }
+                        h1 { color: #d4a574; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
+                        th { background-color: #f2f2f2; }
+                    </style>
+                </head>
+                <body>
+                    <h1>تقرير محفظتي الاستثمارية</h1>
+                    <p>التاريخ: ${new Date().toLocaleDateString('ar-EG')}</p>
+                    <table>
+                        <tr>
+                            <th>#</th><th>السهم</th><th>القطاع</th><th>سعر الشراء</th><th>العدد</th>
+                            <th>الإجمالي</th><th>السعر الحالي</th><th>الأرباح</th><th>النسبة</th>
+                        </tr>
+                        ${stocks.map((s, i) => {
+                            const invest = s.purchasePrice * s.quantity;
+                            const curr = s.currentPrice * s.quantity;
+                            const profit = curr - invest;
+                            const pct = (profit / invest * 100).toFixed(2);
+                            return `<tr>
+                                <td>${i + 1}</td>
+                                <td>${s.name}</td>
+                                <td>${s.category}</td>
+                                <td>${s.purchasePrice}</td>
+                                <td>${s.quantity}</td>
+                                <td>${invest.toFixed(2)}</td>
+                                <td>${s.currentPrice}</td>
+                                <td>${profit.toFixed(2)}</td>
+                                <td>${pct}%</td>
+                            </tr>`;
+                        }).join('')}
+                    </table>
+                </body>
+                </html>
+            `;
+
+            const opt = {
+                margin: 10,
+                filename: 'portfolio_' + new Date().toISOString().split('T')[0] + '.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { orientation: 'landscape', unit: 'mm', format: 'a4' }
+            };
+
+            html2pdf().set(opt).from(html).save();
+            showMessage('✓ تم تصدير PDF بنجاح', 'success');
+        };
+
+        window.exportCSV = function() {
+            let csv = 'رقم,السهم,القطاع,سعر الشراء,العدد,الإجمالي,السعر الحالي,الأرباح,النسبة\n';
+            stocks.forEach((s, i) => {
+                const invest = s.purchasePrice * s.quantity;
+                const curr = s.currentPrice * s.quantity;
+                const profit = curr - invest;
+                const pct = (profit / invest * 100).toFixed(2);
+                csv += `${i + 1},${s.name},${s.category},${s.purchasePrice},${s.quantity},${invest.toFixed(2)},${s.currentPrice},${profit.toFixed(2)},${pct}%\n`;
+            });
+
+            const link = document.createElement('a');
+            link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+            link.download = 'portfolio_' + new Date().toISOString().split('T')[0] + '.csv';
+            link.click();
+            showMessage('✓ تم تصدير CSV بنجاح', 'success');
+        };
+
+        window.exportJSON = function() {
+            const json = JSON.stringify(stocks, null, 2);
+            const link = document.createElement('a');
+            link.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
+            link.download = 'portfolio_' + new Date().toISOString().split('T')[0] + '.json';
+            link.click();
+            showMessage('✓ تم تصدير JSON بنجاح', 'success');
+        };
+
+        window.downloadTemplate = function() {
+            const template = 'name,purchasePrice,quantity,currentPrice,category,pe,eps,roe,roa,notes\nADAWEE,25.5,100,28.0,قطاع مالي,12.5,2.24,15.5,8.2,سهم موثوق\nEBANK,15.0,50,16.5,قطاع مالي,10.2,1.62,12.0,6.5,أداء جيدة';
+            const link = document.createElement('a');
+            link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(template);
+            link.download = 'portfolio_template.csv';
+            link.click();
+        };
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+        function handleFile(file) {
+            if (!file || !file.name.endsWith('.csv')) {
+                showMessage('✗ الرجاء اختيار ملف CSV', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const csv = e.target.result;
+                const lines = csv.split('\n').filter(l => l.trim());
+                const headers = lines[0].split(',');
+                importedData = [];
+
+                for (let i = 1; i < lines.length; i++) {
+                    const values = lines[i].split(',');
+                    const row = {};
+                    headers.forEach((h, idx) => row[h.trim()] = values[idx]?.trim());
+                    importedData.push(row);
+                }
+
+                showPreview();
+            };
+            reader.readAsText(file);
+        }
+
+        function showPreview() {
+            const head = document.getElementById('previewHead');
+            const body = document.getElementById('previewBody');
+
+            if (importedData.length === 0) {
+                showMessage('✗ الملف فارغ', 'error');
+                return;
+            }
+
+            head.innerHTML = '<tr>' + Object.keys(importedData[0]).map(k => `<th>${k}</th>`).join('') + '</tr>';
+            body.innerHTML = importedData.map(row => 
+                '<tr>' + Object.values(row).map(v => `<td>${v}</td>`).join('') + '</tr>'
+            ).join('');
+
+            document.getElementById('preview').style.display = 'block';
+        }
+
+        window.importStocks = async function() {
+            try {
+                for (let row of importedData) {
+                    const stock = {
+                        name: row.name ? row.name.toUpperCase() : '',
+                        purchasePrice: parseFloat(row.purchasePrice) || 0,
+                        quantity: parseInt(row.quantity) || 0,
+                        currentPrice: parseFloat(row.currentPrice) || 0,
+                        category: row.category || 'أخرى',
+                        pe: parseFloat(row.pe) || null,
+                        eps: parseFloat(row.eps) || null,
+                        roe: parseFloat(row.roe) || null,
+                        roa: parseFloat(row.roa) || null,
+                        notes: row.notes || '',
+                        date: new Date().toISOString()
+                    };
+                    await push(ref(db, 'stocks/' + currentUser.uid), stock);
+                }
+                showMessage('✓ تم استيراد ' + importedData.length + ' سهم بنجاح', 'success');
+                cancelImport();
+                loadStocks();
+            } catch (error) {
+                showMessage('✗ خطأ: ' + error.message, 'error');
+            }
+        };
+
+        window.cancelImport = function() {
+            document.getElementById('preview').style.display = 'none';
+            document.getElementById('fileInput').value = '';
+            importedData = [];
+        };
+
+        function showMessage(msg, type) {
+            const msgDiv = document.getElementById('importMsg');
+            msgDiv.textContent = msg;
+            msgDiv.className = 'message show ' + type;
+            setTimeout(() => msgDiv.classList.remove('show'), 3000);
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
