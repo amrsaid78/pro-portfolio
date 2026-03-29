@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Portfolio - التحليلات</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: rgba(26, 31, 46, 0.8); border: 1px solid rgba(212, 165, 116, 0.2); border-radius: 8px; padding: 15px; text-align: center; }
+        .stat-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
+        .stat-value { font-size: 20px; font-weight: 700; color: var(--accent-gold); margin-bottom: 5px; }
+        .stat-change { font-size: 12px; color: #7dd87d; }
+        .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .chart-card { background: rgba(26, 31, 46, 0.8); border: 1px solid rgba(212, 165, 116, 0.2); border-radius: 8px; padding: 20px; }
+        .chart-title { font-size: 16px; font-weight: 700; margin-bottom: 15px; color: var(--accent-gold); }
+        .chart-container { position: relative; height: 300px; }
+        @media (max-width: 768px) { .charts { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">PRO PORTFOLIO</div>
+        <nav class="nav">
+            <a href="dashboard.html">لوحة التحكم</a>
+            <a href="stocks.html">الأسهم</a>
+            <a href="analytics.html" class="active">التحليلات</a>
+            <a href="import-export.html">الاستيراد/التصدير</a>
+            <a href="settings.html">الإعدادات</a>
+        </nav>
+        <div class="user-section">
+            <div class="user-info">
+                <div class="user-name" id="userName">-</div>
+                <div class="user-email" id="userEmail">-</div>
+            </div>
+            <button class="logout-btn" id="logoutBtn" onclick="handleLogout()">خروج</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1 class="title">التحليلات المتقدمة</h1>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-label">أفضل قطاع</div>
+                <div class="stat-value" id="bestSector">-</div>
+                <div class="stat-change" id="bestSectorPct">+0%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">أسوأ قطاع</div>
+                <div class="stat-value" id="worstSector">-</div>
+                <div class="stat-change" id="worstSectorPct" style="color: #ff6b6b;">-0%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">متوسط الأداء</div>
+                <div class="stat-value" id="avgPerformance">0%</div>
+                <div class="stat-change">للمحفظة</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">أفضل سهم</div>
+                <div class="stat-value" id="bestStock">-</div>
+                <div class="stat-change" id="bestStockPct">+0%</div>
+            </div>
+        </div>
+
+        <div class="charts">
+            <div class="chart-card">
+                <div class="chart-title">أداء القطاعات</div>
+                <div class="chart-container"><canvas id="sectorPerformanceChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">توزيع الأسهم حسب القطاع</div>
+                <div class="chart-container"><canvas id="sectorDistributionChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">أفضل 5 أسهم</div>
+                <div class="chart-container"><canvas id="topStocksChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">توزيع الأرباح</div>
+                <div class="chart-container"><canvas id="profitDistributionChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+
+        const config = {
+            apiKey: "AIzaSyAcfyosJ7Se5-4PSfKbpZPXE4PU_STkwes",
+            authDomain: "pro-portfolio-b5076.firebaseapp.com",
+            databaseURL: "https://pro-portfolio-b5076-default-rtdb.firebaseio.com",
+            projectId: "pro-portfolio-b5076",
+            storageBucket: "pro-portfolio-b5076.firebasestorage.app",
+            messagingSenderId: "492601419310",
+            appId: "1:492601419310:web:76af56c6eb39056e0e61bf"
+        };
+
+        const app = initializeApp(config);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let stocks = [];
+        let charts = {};
+        let currentUser = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            currentUser = user;
+            document.getElementById('userEmail').textContent = user.email;
+
+            try {
+                const userRef = ref(db, 'users/' + user.uid);
+                const snap = await (async () => {
+                    return new Promise((resolve) => {
+                        onValue(ref(db, 'users/' + user.uid), resolve);
+                    });
+                })();
+                if (snap.exists()) {
+                    document.getElementById('userName').textContent = snap.val().name;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+
+            loadStocks();
+        });
+
+        function loadStocks() {
+            onValue(ref(db, 'stocks/' + currentUser.uid), (snap) => {
+                stocks = [];
+                if (snap.exists()) {
+                    Object.entries(snap.val()).forEach(([key, val]) => {
+                        stocks.push({ ...val, id: key });
+                    });
+                }
+                updateStats();
+                initCharts();
+            }, (error) => {
+                console.error('خطأ تحميل الأسهم:', error);
+            });
+        }
+
+        function updateStats() {
+            if (stocks.length === 0) return;
+
+            // أفضل وأسوأ قطاع
+            const sectorAnalysis = {};
+            stocks.forEach(s => {
+                if (!sectorAnalysis[s.category]) {
+                    sectorAnalysis[s.category] = { profit: 0, invest: 0 };
+                }
+                
+                const investAmount = (s.firstPurchasePrice || 0) * (s.firstQuantity || 0);
+                const currentValue = (s.currentPrice || 0) * (s.firstQuantity || 0);
+                const profit = currentValue - investAmount;
+                
+                sectorAnalysis[s.category].profit += profit;
+                sectorAnalysis[s.category].invest += investAmount;
+            });
+
+            let bestSector = '', bestSectorPct = -Infinity;
+            let worstSector = '', worstSectorPct = Infinity;
+
+            Object.entries(sectorAnalysis).forEach(([sector, data]) => {
+                const pct = data.invest > 0 ? (data.profit / data.invest * 100) : 0;
+                if (pct > bestSectorPct) {
+                    bestSectorPct = pct;
+                    bestSector = sector;
+                }
+                if (pct < worstSectorPct) {
+                    worstSectorPct = pct;
+                    worstSector = sector;
+                }
+            });
+
+            document.getElementById('bestSector').textContent = bestSector || '-';
+            document.getElementById('bestSectorPct').textContent = (bestSectorPct >= 0 ? '+' : '') + bestSectorPct.toFixed(2) + '%';
+            document.getElementById('worstSector').textContent = worstSector || '-';
+            document.getElementById('worstSectorPct').textContent = (worstSectorPct >= 0 ? '+' : '') + worstSectorPct.toFixed(2) + '%';
+
+            // متوسط الأداء
+            let totalProfit = 0, totalInvest = 0;
+            stocks.forEach(s => {
+                const investAmount = (s.firstPurchasePrice || 0) * (s.firstQuantity || 0);
+                const currentValue = (s.currentPrice || 0) * (s.firstQuantity || 0);
+                totalProfit += currentValue - investAmount;
+                totalInvest += investAmount;
+            });
+            const avgPct = totalInvest > 0 ? (totalProfit / totalInvest * 100).toFixed(2) : 0;
+            document.getElementById('avgPerformance').textContent = (avgPct >= 0 ? '+' : '') + avgPct + '%';
+
+            // أفضل سهم
+            let bestStock = '', bestStockPct = -Infinity;
+            stocks.forEach(s => {
+                const purchasePrice = s.firstPurchasePrice || 0;
+                if (purchasePrice > 0) {
+                    const pct = ((s.currentPrice - purchasePrice) / purchasePrice * 100);
+                    if (pct > bestStockPct) {
+                        bestStockPct = pct;
+                        bestStock = s.name;
+                    }
+                }
+            });
+            document.getElementById('bestStock').textContent = bestStock || '-';
+            document.getElementById('bestStockPct').textContent = (bestStockPct === -Infinity ? '-' : (bestStockPct >= 0 ? '+' : '') + bestStockPct.toFixed(2) + '%');
+        }
+
+        function initCharts() {
+            if (stocks.length === 0) return;
+
+            // 1. توزيع الأسهم حسب القطاع
+            const sectorCount = {};
+            stocks.forEach(s => {
+                sectorCount[s.category] = (sectorCount[s.category] || 0) + 1;
+            });
+
+            if (charts.sectorDist) charts.sectorDist.destroy();
+            const ctx1 = document.getElementById('sectorDistributionChart').getContext('2d');
+            charts.sectorDist = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(sectorCount),
+                    datasets: [{
+                        data: Object.values(sectorCount),
+                        backgroundColor: ['#d4a574', '#e8c4a0', '#c89968', '#e0b89c', '#d9a17a', '#e5b896', '#c99070', '#e2b08a'],
+                        borderColor: '#1a1f2e'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#b0b0b0' } } } }
+            });
+
+            // 2. أداء القطاعات
+            const sectorPerf = {};
+            stocks.forEach(s => {
+                if (!sectorPerf[s.category]) sectorPerf[s.category] = { profit: 0, invest: 0 };
+                
+                const investAmount = (s.firstPurchasePrice || 0) * (s.firstQuantity || 0);
+                const currentValue = (s.currentPrice || 0) * (s.firstQuantity || 0);
+                const profit = currentValue - investAmount;
+                
+                sectorPerf[s.category].profit += profit;
+                sectorPerf[s.category].invest += investAmount;
+            });
+
+            const sectorPcts = Object.entries(sectorPerf).map(([_, data]) => 
+                data.invest > 0 ? (data.profit / data.invest * 100).toFixed(2) : 0
+            );
+
+            if (charts.sectorPerf) charts.sectorPerf.destroy();
+            const ctx2 = document.getElementById('sectorPerformanceChart').getContext('2d');
+            charts.sectorPerf = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(sectorPerf),
+                    datasets: [{
+                        label: 'النسبة %',
+                        data: sectorPcts,
+                        backgroundColor: sectorPcts.map(p => p >= 0 ? '#4caf50' : '#ff6b6b')
+                    }]
+                },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(212, 165, 116, 0.1)' }, ticks: { color: '#b0b0b0' } }, y: { grid: { display: false }, ticks: { color: '#b0b0b0' } } } }
+            });
+
+            // 3. أفضل 5 أسهم
+            const sortedStocks = [...stocks].sort((a, b) => {
+                const pctA = a.firstPurchasePrice && a.firstPurchasePrice > 0 ? ((b.currentPrice - b.firstPurchasePrice) / b.firstPurchasePrice * 100) : 0;
+                const pctB = b.firstPurchasePrice && b.firstPurchasePrice > 0 ? ((a.currentPrice - a.firstPurchasePrice) / a.firstPurchasePrice * 100) : 0;
+                return pctA - pctB;
+            }).slice(0, 5);
+
+            const topPcts = sortedStocks.map(s => {
+                if (s.firstPurchasePrice && s.firstPurchasePrice > 0) {
+                    return ((s.currentPrice - s.firstPurchasePrice) / s.firstPurchasePrice * 100).toFixed(2);
+                }
+                return 0;
+            });
+
+            if (charts.topStocks) charts.topStocks.destroy();
+            const ctx3 = document.getElementById('topStocksChart').getContext('2d');
+            charts.topStocks = new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: sortedStocks.map(s => s.name),
+                    datasets: [{
+                        label: '%',
+                        data: topPcts,
+                        backgroundColor: topPcts.map(p => p >= 0 ? '#4caf50' : '#ff6b6b')
+                    }]
+                },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: 'rgba(212, 165, 116, 0.1)' }, ticks: { color: '#b0b0b0' } }, y: { grid: { display: false }, ticks: { color: '#b0b0b0' } } } }
+            });
+
+            // 4. توزيع الأرباح مع النسبة المئوية
+            const profits = stocks.map(s => {
+                const investAmount = (s.firstPurchasePrice || 0) * (s.firstQuantity || 0);
+                const currentValue = (s.currentPrice || 0) * (s.firstQuantity || 0);
+                return currentValue - investAmount;
+            });
+
+            const profitPercentages = stocks.map(s => {
+                const investAmount = (s.firstPurchasePrice || 0) * (s.firstQuantity || 0);
+                const currentValue = (s.currentPrice || 0) * (s.firstQuantity || 0);
+                const profit = currentValue - investAmount;
+                return investAmount > 0 ? (profit / investAmount * 100).toFixed(2) : 0;
+            });
+
+            if (charts.profitDist) charts.profitDist.destroy();
+            const ctx4 = document.getElementById('profitDistributionChart').getContext('2d');
+            charts.profitDist = new Chart(ctx4, {
+                type: 'bar',
+                data: {
+                    labels: stocks.map((s, i) => s.name + ' (' + profitPercentages[i] + '%)'),
+                    datasets: [{
+                        label: 'الأرباح ج.م',
+                        data: profits,
+                        backgroundColor: profits.map(p => p >= 0 ? '#7dd87d' : '#ff6b6b')
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: 'rgba(212, 165, 116, 0.1)' }, ticks: { color: '#b0b0b0' } }, x: { grid: { display: false }, ticks: { color: '#b0b0b0' } } } }
+            });
+        }
+
+        window.handleLogout = async function() {
+            try {
+                await signOut(auth);
+                sessionStorage.clear();
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        };
+    </script>
+</body>
+</html>
