@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Portfolio - الأسهم</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .controls { background: rgba(26, 31, 46, 0.8); border: 1px solid rgba(212, 165, 116, 0.2); border-radius: 12px; padding: 24px; margin-bottom: 30px; display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 15px; align-items: flex-end; }
+        .search-container { position: relative; }
+        .search-dropdown { position: absolute; top: 100%; right: 0; background: rgba(26, 31, 46, 0.95); border: 1px solid rgba(212, 165, 116, 0.2); border-radius: 6px; max-height: 250px; overflow-y: auto; width: 100%; z-index: 100; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .search-dropdown.show { display: block; }
+        .dropdown-item { padding: 12px; cursor: pointer; transition: all 0.2s; border-bottom: 1px solid rgba(212, 165, 116, 0.1); color: #b0b0b0; }
+        .dropdown-item:hover { background: rgba(212, 165, 116, 0.15); color: #d4a574; }
+        .table-card { background: rgba(26, 31, 46, 0.8); border: 1px solid rgba(212, 165, 116, 0.2); border-radius: 12px; padding: 24px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th { padding: 12px; text-align: right; font-weight: 700; color: var(--text-secondary); font-size: 11px; border-bottom: 1px solid rgba(212, 165, 116, 0.2); text-transform: uppercase; }
+        td { padding: 12px; border-bottom: 1px solid rgba(212, 165, 116, 0.1); font-size: 13px; }
+        .action-buttons { display: flex; gap: 8px; position: relative; }
+        .action-menu-btn { padding: 8px 12px; background: rgba(212, 165, 116, 0.2); border: 1px solid #d4a574; color: #d4a574; border-radius: 4px; cursor: pointer; font-family: 'Tajawal', sans-serif; font-size: 14px; transition: all 0.3s; }
+        .action-menu-btn:hover { background: #d4a574; color: #0f1419; }
+        .action-menu { position: absolute; background: rgba(26, 31, 46, 0.95); border: 1px solid rgba(212, 165, 116, 0.2); border-radius: 6px; min-width: 180px; z-index: 50; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .action-menu.show { display: block; }
+        .action-item { padding: 10px 15px; cursor: pointer; border-bottom: 1px solid rgba(212, 165, 116, 0.1); transition: all 0.2s; color: #b0b0b0; }
+        .action-item:hover { background: rgba(212, 165, 116, 0.15); color: #d4a574; }
+        .action-item.danger:hover { background: rgba(255, 107, 107, 0.15); color: #ff6b6b; }
+        .category-section { background: rgba(26, 31, 46, 0.8); border: 1px solid rgba(212, 165, 116, 0.2); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .category-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid rgba(212, 165, 116, 0.2); flex-wrap: wrap; gap: 15px; }
+        .category-title { font-size: 18px; font-weight: 700; color: var(--accent-gold); white-space: nowrap; }
+        .category-stats-inline { display: flex; gap: 20px; flex-wrap: wrap; font-size: 13px; }
+        .stat-inline { display: flex; align-items: center; gap: 8px; }
+        .stat-label { color: var(--text-secondary); }
+        .stat-value { font-weight: 700; color: var(--accent-gold); }
+        .view-btn { padding: 10px 20px; background: rgba(212, 165, 116, 0.2); border: 1px solid #d4a574; color: #d4a574; border-radius: 6px; cursor: pointer; font-family: 'Tajawal', sans-serif; font-weight: 600; transition: all 0.3s; }
+        .view-btn.active { background: linear-gradient(135deg, #d4a574 0%, #e8c4a0 100%); color: #0f1419; }
+        .empty-message { text-align: center; padding: 40px; color: var(--text-secondary); }
+        .back-btn { padding: 8px 15px; background: rgba(212, 165, 116, 0.2); border: 1px solid #d4a574; color: #d4a574; border-radius: 6px; cursor: pointer; font-family: 'Tajawal', sans-serif; margin-bottom: 15px; }
+        .back-btn:hover { background: #d4a574; color: #0f1419; }
+        .transaction-item { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 6px; margin-bottom: 10px; border-right: 3px solid var(--accent-gold); }
+        .transaction-date { font-weight: 700; color: var(--accent-gold); margin-bottom: 8px; }
+        .transaction-type { display: inline-block; padding: 4px 10px; background: rgba(212, 165, 116, 0.2); border-radius: 3px; font-size: 11px; margin-bottom: 8px; }
+        .transaction-detail { font-size: 12px; color: var(--text-secondary); margin-bottom: 3px; }
+        .details-header { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid rgba(212, 165, 116, 0.2); }
+        .details-title { font-size: 24px; font-weight: 800; color: var(--accent-gold); margin-bottom: 8px; }
+        .details-subtitle { font-size: 13px; color: var(--text-secondary); }
+        .summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+        .summary-card { background: rgba(0,0,0,0.2); padding: 12px; border-radius: 6px; border-left: 3px solid var(--accent-gold); }
+        .summary-card-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 5px; }
+        .summary-card-value { font-size: 14px; font-weight: 700; color: var(--accent-gold); }
+        @media (max-width: 768px) { .controls { grid-template-columns: 1fr 1fr; } .summary-cards { grid-template-columns: 1fr 1fr; } }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">PRO PORTFOLIO</div>
+        <nav class="nav">
+            <a href="dashboard.html">لوحة التحكم</a>
+            <a href="stocks.html" class="active">الأسهم</a>
+            <a href="analytics.html">التحليلات</a>
+            <a href="import-export.html">الاستيراد/التصدير</a>
+            <a href="settings.html">الإعدادات</a>
+        </nav>
+        <div class="user-section">
+            <div class="user-info">
+                <div class="user-name" id="userName">-</div>
+                <div class="user-email" id="userEmail">-</div>
+            </div>
+            <button class="logout-btn" id="logoutBtn">خروج</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1 class="title">إدارة الأسهم</h1>
+
+        <div class="controls">
+            <div class="search-container">
+                <label style="display: block; margin-bottom: 8px; font-size: 12px; font-weight: 600; color: var(--text-secondary);">البحث</label>
+                <input type="text" id="searchInput" placeholder="ابحث بـ الاسم أو الرمز...">
+                <div id="searchDropdown" class="search-dropdown"></div>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 8px; font-size: 12px; font-weight: 600; color: var(--text-secondary);">القطاع</label>
+                <select id="filterCategory">
+                    <option value="">كل القطاعات</option>
+                    <option value="قطاع مالي">قطاع مالي</option>
+                    <option value="قطاع عقاري">قطاع عقاري</option>
+                    <option value="قطاع صحي">قطاع صحي</option>
+                    <option value="الاتصالات">الاتصالات</option>
+                    <option value="تكنولوجيا المعلومات">تكنولوجيا المعلومات</option>
+                    <option value="الأغذية والمشروبات">الأغذية والمشروبات</option>
+                    <option value="الأسمدة والكيماويات">الأسمدة والكيماويات</option>
+                    <option value="مواد أساسية">مواد أساسية</option>
+                    <option value="الطاقة">الطاقة</option>
+                    <option value="التأمين">التأمين</option>
+                    <option value="أخرى">أخرى</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" id="addBtn">➕ إضافة</button>
+            <button class="view-btn" id="viewToggleBtn">عرض حسب القطاع</button>
+        </div>
+
+        <!-- List View -->
+        <div id="listView" class="table-card" style="display: block;">
+            <button class="back-btn" id="backBtn" style="display: none;" onclick="clearSearch()">← العودة للقائمة</button>
+            
+            <div id="detailsHeader" style="display: none;">
+                <div class="details-header">
+                    <div class="details-title" id="detailsTitle">-</div>
+                    <div class="details-subtitle" id="detailsSubtitle">-</div>
+                </div>
+                <div class="summary-cards">
+                    <div class="summary-card">
+                        <div class="summary-card-label">إجمالي الأسهم</div>
+                        <div class="summary-card-value" id="totalQty">0</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-card-label">متوسط السعر</div>
+                        <div class="summary-card-value" id="avgPrice">0.00</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-card-label">السعر الحالي</div>
+                        <div class="summary-card-value" id="currentPrice">0.00</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-card-label">الأرباح/الخسائر</div>
+                        <div class="summary-card-value" id="profit">0.00</div>
+                    </div>
+                </div>
+                <h3 style="color: var(--accent-gold); margin-bottom: 15px;">السجل الكامل</h3>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>السهم</th>
+                        <th>الرمز</th>
+                        <th>القطاع</th>
+                        <th>متوسط السعر</th>
+                        <th>الكمية</th>
+                        <th>السعر الحالي</th>
+                        <th>الأرباح</th>
+                        <th>النسبة %</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="stocksBody">
+                    <tr><td colspan="10" class="empty-message">لا توجد أسهم</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Category View -->
+        <div id="categoryView" style="display: none;">
+            <div id="categoryContainer"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getDatabase, ref, get, set, push, remove, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+
+        const config = {
+            apiKey: "AIzaSyAcfyosJ7Se5-4PSfKbpZPXE4PU_STkwes",
+            authDomain: "pro-portfolio-b5076.firebaseapp.com",
+            databaseURL: "https://pro-portfolio-b5076-default-rtdb.firebaseio.com",
+            projectId: "pro-portfolio-b5076",
+            storageBucket: "pro-portfolio-b5076.firebasestorage.app",
+            messagingSenderId: "492601419310",
+            appId: "1:492601419310:web:76af56c6eb39056e0e61bf"
+        };
+
+        const app = initializeApp(config);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let allStocks = [];
+        let displayedStocks = [];
+        let currentUser = null;
+        let currentView = 'list';
+        let selectedStockName = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            currentUser = user;
+            document.getElementById('userEmail').textContent = user.email;
+
+            try {
+                const userRef = ref(db, 'users/' + user.uid);
+                const snap = await get(userRef);
+                if (snap.exists()) {
+                    document.getElementById('userName').textContent = snap.val().name;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+
+            loadStocks();
+        });
+
+        function loadStocks() {
+            onValue(ref(db, 'stocks/' + currentUser.uid), (snap) => {
+                allStocks = [];
+                if (snap.exists()) {
+                    Object.entries(snap.val()).forEach(([key, val]) => {
+                        allStocks.push({ ...val, id: key });
+                    });
+                }
+                displayedStocks = [...allStocks];
+                updateSearchDropdown();
+                render();
+            });
+        }
+
+        function updateSearchDropdown() {
+            const dropdown = document.getElementById('searchDropdown');
+            const uniqueStocks = [...new Map(allStocks.map(s => [s.name, s])).values()];
+            dropdown.innerHTML = uniqueStocks.map(stock => 
+                `<div class="dropdown-item" onclick="selectFromDropdown('${stock.name.replace(/'/g, "\\'")}')">${stock.name} (${stock.symbol || '-'})</div>`
+            ).join('');
+        }
+
+        window.selectFromDropdown = function(name) {
+            document.getElementById('searchInput').value = name;
+            document.getElementById('searchDropdown').classList.remove('show');
+            showStockDetails(name);
+        };
+
+        window.clearSearch = function() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('filterCategory').value = '';
+            selectedStockName = null;
+            displayedStocks = [...allStocks];
+            document.getElementById('backBtn').style.display = 'none';
+            document.getElementById('detailsHeader').style.display = 'none';
+            render();
+        };
+
+        document.getElementById('searchInput').addEventListener('focus', () => {
+            if (document.getElementById('searchInput').value === '') {
+                document.getElementById('searchDropdown').classList.add('show');
+            }
+        });
+
+        document.getElementById('searchInput').addEventListener('blur', () => {
+            setTimeout(() => {
+                document.getElementById('searchDropdown').classList.remove('show');
+            }, 200);
+        });
+
+        document.getElementById('searchInput').addEventListener('input', filterStocks);
+        document.getElementById('filterCategory').addEventListener('change', filterStocks);
+
+        function filterStocks() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const category = document.getElementById('filterCategory').value;
+
+            displayedStocks = allStocks.filter(s => {
+                const matchSearch = s.name.toLowerCase().includes(search) || (s.symbol && s.symbol.toLowerCase().includes(search));
+                const matchCategory = !category || s.category === category;
+                return matchSearch && matchCategory;
+            });
+
+            render();
+        }
+
+        window.showStockDetails = function(stockName) {
+            selectedStockName = stockName;
+            const stocks = allStocks.filter(s => s.name === stockName);
+            
+            if (stocks.length === 0) return;
+
+            let totalQuantity = 0;
+            let totalInvested = 0;
+
+            stocks.forEach(s => {
+                totalQuantity += (s.firstQuantity || 0);
+                totalInvested += ((s.firstPurchasePrice || 0) * (s.firstQuantity || 0));
+            });
+
+            const avgPrice = totalQuantity > 0 ? totalInvested / totalQuantity : 0;
+            const currentPrice = stocks[0].currentPrice || 0;
+            const currentValue = currentPrice * totalQuantity;
+            const profit = currentValue - totalInvested;
+
+            document.getElementById('detailsTitle').textContent = stockName;
+            document.getElementById('detailsSubtitle').textContent = `${stocks[0].category} • ${stocks[0].symbol || '-'}`;
+            document.getElementById('totalQty').textContent = totalQuantity;
+            document.getElementById('avgPrice').textContent = avgPrice.toFixed(2);
+            document.getElementById('currentPrice').textContent = currentPrice.toFixed(2);
+            document.getElementById('profit').textContent = profit.toFixed(2);
+            document.getElementById('profit').style.color = profit >= 0 ? '#7dd87d' : '#ff6b6b';
+
+            document.getElementById('backBtn').style.display = 'block';
+            document.getElementById('detailsHeader').style.display = 'block';
+
+            renderStockDetails(stocks);
+        };
+
+        function renderStockDetails(stocks) {
+            const tbody = document.getElementById('stocksBody');
+            const transactions = [];
+
+            stocks.forEach(s => {
+                if (s.firstPurchaseDate) {
+                    transactions.push({
+                        date: s.firstPurchaseDate,
+                        type: 'شراء',
+                        quantity: s.firstQuantity,
+                        price: s.firstPurchasePrice,
+                        total: s.firstQuantity * s.firstPurchasePrice
+                    });
+                }
+                if (s.purchases && s.purchases.length > 0) {
+                    s.purchases.forEach(p => {
+                        if (p.date) {
+                            transactions.push({
+                                date: p.date,
+                                type: 'شراء إضافي',
+                                quantity: p.quantity,
+                                price: p.pricePerShare,
+                                total: p.total
+                            });
+                        }
+                    });
+                }
+                if (s.dividends && s.dividends.length > 0) {
+                    s.dividends.forEach(d => {
+                        if (d.type === 'cash') {
+                            transactions.push({
+                                date: d.date,
+                                type: 'توزيع نقدي',
+                                value: d.value,
+                                totalAmount: d.totalAmount,
+                                received: d.received
+                            });
+                        } else {
+                            transactions.push({
+                                date: d.date,
+                                type: 'توزيع أسهم',
+                                ratio: d.stockRatio,
+                                newShares: d.newSharesAdded,
+                                received: d.received
+                            });
+                        }
+                    });
+                }
+            });
+
+            transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            tbody.innerHTML = transactions.map((t, i) => {
+                if (t.type.includes('شراء')) {
+                    return `<tr>
+                        <td>${i + 1}</td>
+                        <td colspan="9">
+                            <div class="transaction-item">
+                                <div class="transaction-date">📅 ${t.date}</div>
+                                <div class="transaction-type">${t.type}</div>
+                                <div class="transaction-detail"><strong>الكمية:</strong> ${t.quantity} سهم</div>
+                                <div class="transaction-detail"><strong>السعر:</strong> ${t.price.toFixed(2)} ج.م</div>
+                                <div class="transaction-detail"><strong>الإجمالي:</strong> ${t.total.toFixed(2)} ج.م</div>
+                            </div>
+                        </td>
+                    </tr>`;
+                } else if (t.type === 'توزيع نقدي') {
+                    return `<tr>
+                        <td>${i + 1}</td>
+                        <td colspan="9">
+                            <div class="transaction-item">
+                                <div class="transaction-date">📅 ${t.date}</div>
+                                <div class="transaction-type">💰 توزيع نقدي</div>
+                                <div class="transaction-detail"><strong>القيمة:</strong> ${t.value.toFixed(2)} ج.م لكل سهم</div>
+                                <div class="transaction-detail"><strong>الإجمالي:</strong> ${t.totalAmount.toFixed(2)} ج.م</div>
+                                <div class="transaction-detail"><strong>الحالة:</strong> ${t.received ? '✓ تم الاستلام' : '⏳ قريباً'}</div>
+                            </div>
+                        </td>
+                    </tr>`;
+                } else {
+                    return `<tr>
+                        <td>${i + 1}</td>
+                        <td colspan="9">
+                            <div class="transaction-item">
+                                <div class="transaction-date">📅 ${t.date}</div>
+                                <div class="transaction-type">🎁 توزيع أسهم</div>
+                                <div class="transaction-detail"><strong>النسبة:</strong> ${t.ratio}</div>
+                                <div class="transaction-detail"><strong>الأسهم الجديدة:</strong> ${t.newShares}</div>
+                                <div class="transaction-detail"><strong>الحالة:</strong> ${t.received ? '✓ تم الاستلام' : '⏳ قريباً'}</div>
+                            </div>
+                        </td>
+                    </tr>`;
+                }
+            }).join('');
+        }
+
+        function render() {
+            if (currentView === 'list') {
+                renderTable();
+            } else {
+                renderCategoryView();
+            }
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('stocksBody');
+
+            if (displayedStocks.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" class="empty-message">لا توجد أسهم</td></tr>';
+                return;
+            }
+
+            const groupedByName = {};
+            displayedStocks.forEach(s => {
+                if (!groupedByName[s.name]) {
+                    groupedByName[s.name] = {
+                        name: s.name,
+                        symbol: s.symbol || '',
+                        category: s.category,
+                        totalQuantity: 0,
+                        totalInvested: 0,
+                        currentPrice: s.currentPrice || 0,
+                        stocks: []
+                    };
+                }
+                groupedByName[s.name].totalQuantity += (s.firstQuantity || 0);
+                groupedByName[s.name].totalInvested += ((s.firstPurchasePrice || 0) * (s.firstQuantity || 0));
+                groupedByName[s.name].stocks.push(s);
+            });
+
+            const grouped = Object.values(groupedByName);
+
+            tbody.innerHTML = grouped.map((group, i) => {
+                const avgPrice = group.totalInvested > 0 ? group.totalInvested / group.totalQuantity : 0;
+                const invest = group.totalInvested;
+                const curr = (group.currentPrice || 0) * group.totalQuantity;
+                const profit = curr - invest;
+                const pct = invest > 0 ? ((curr - invest) / invest * 100).toFixed(2) : 0;
+
+                return `<tr>
+                    <td>${i + 1}</td>
+                    <td><strong onclick="showStockDetails('${group.name.replace(/'/g, "\\'")}')" style="cursor: pointer; color: var(--accent-gold);">${group.name}</strong></td>
+                    <td>${group.symbol}</td>
+                    <td>${group.category}</td>
+                    <td>${avgPrice.toFixed(2)}</td>
+                    <td>${group.totalQuantity}</td>
+                    <td>${group.currentPrice || '-'}</td>
+                    <td style="color: ${profit >= 0 ? '#7dd87d' : '#ff6b6b'}">${profit.toFixed(2)}</td>
+                    <td style="color: ${profit >= 0 ? '#7dd87d' : '#ff6b6b'}; font-weight: 600;">${pct}%</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-menu-btn" onclick="toggleActionMenu(event, '${group.stocks[0].id}')">⋮</button>
+                            <div class="action-menu" id="menu-${group.stocks[0].id}">
+                                <div class="action-item" onclick="deleteStock('${group.stocks[0].id}')" style="cursor: pointer;">🗑️ حذف</div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function renderCategoryView() {
+            const container = document.getElementById('categoryContainer');
+            const groupedByName = {};
+            displayedStocks.forEach(s => {
+                if (!groupedByName[s.name]) {
+                    groupedByName[s.name] = {
+                        name: s.name,
+                        symbol: s.symbol || '',
+                        category: s.category,
+                        totalQuantity: 0,
+                        totalInvested: 0,
+                        currentPrice: s.currentPrice || 0,
+                        stocks: []
+                    };
+                }
+                groupedByName[s.name].totalQuantity += (s.firstQuantity || 0);
+                groupedByName[s.name].totalInvested += ((s.firstPurchasePrice || 0) * (s.firstQuantity || 0));
+                groupedByName[s.name].stocks.push(s);
+            });
+
+            const grouped = Object.values(groupedByName);
+            const categories = {};
+
+            grouped.forEach(group => {
+                if (!categories[group.category]) {
+                    categories[group.category] = [];
+                }
+                categories[group.category].push(group);
+            });
+
+            if (Object.keys(categories).length === 0) {
+                container.innerHTML = '<div class="empty-message">لا توجد أسهم</div>';
+                return;
+            }
+
+            container.innerHTML = Object.entries(categories).map(([category, groups]) => {
+                const categoryTotal = groups.reduce((sum, g) => sum + g.totalInvested, 0);
+                const categoryCurrentValue = groups.reduce((sum, g) => sum + ((g.currentPrice || 0) * g.totalQuantity), 0);
+                const categoryProfit = categoryCurrentValue - categoryTotal;
+                const categoryPct = categoryTotal > 0 ? ((categoryCurrentValue - categoryTotal) / categoryTotal * 100).toFixed(2) : 0;
+
+                return `
+                    <div class="category-section">
+                        <div class="category-header">
+                            <div class="category-title">${category}</div>
+                            <div class="category-stats-inline">
+                                <div class="stat-inline">
+                                    <span class="stat-label">إجمالي:</span>
+                                    <span class="stat-value">${categoryTotal.toFixed(2)}</span>
+                                </div>
+                                <div class="stat-inline">
+                                    <span class="stat-label">القيمة:</span>
+                                    <span class="stat-value">${categoryCurrentValue.toFixed(2)}</span>
+                                </div>
+                                <div class="stat-inline">
+                                    <span class="stat-label">الأرباح:</span>
+                                    <span class="stat-value" style="color: ${categoryProfit >= 0 ? '#7dd87d' : '#ff6b6b'}">${categoryProfit.toFixed(2)}</span>
+                                </div>
+                                <div class="stat-inline">
+                                    <span class="stat-label">النسبة:</span>
+                                    <span class="stat-value" style="color: ${categoryProfit >= 0 ? '#7dd87d' : '#ff6b6b'}">${categoryPct}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.toggleActionMenu = function(event, stockId) {
+            event.stopPropagation();
+            const menu = document.getElementById('menu-' + stockId);
+            
+            document.querySelectorAll('.action-menu.show').forEach(m => {
+                if (m.id !== 'menu-' + stockId) m.classList.remove('show');
+            });
+            
+            menu.classList.toggle('show');
+            
+            // Dynamically position menu
+            const rect = menu.getBoundingClientRect();
+            const viewport = window.innerHeight;
+            
+            if (rect.bottom > viewport - 50) {
+                menu.style.top = 'auto';
+                menu.style.bottom = '100%';
+                menu.style.marginBottom = '5px';
+            } else {
+                menu.style.top = '100%';
+                menu.style.bottom = 'auto';
+                menu.style.marginTop = '5px';
+            }
+
+            if (rect.left < 0) {
+                menu.style.right = 'auto';
+                menu.style.left = '0';
+            } else {
+                menu.style.left = 'auto';
+                menu.style.right = '0';
+            }
+        };
+
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.action-menu').forEach(m => m.classList.remove('show'));
+        });
+
+        window.deleteStock = async function(id) {
+            if (confirm('هل أنت متأكد من حذف هذا السهم؟')) {
+                try {
+                    await remove(ref(db, 'stocks/' + currentUser.uid + '/' + id));
+                } catch (error) {
+                    alert('خطأ: ' + error.message);
+                }
+            }
+        };
+
+        window.toggleView = function() {
+            currentView = currentView === 'list' ? 'category' : 'list';
+            document.getElementById('listView').style.display = currentView === 'list' ? 'block' : 'none';
+            document.getElementById('categoryView').style.display = currentView === 'category' ? 'block' : 'none';
+            
+            const btn = document.getElementById('viewToggleBtn');
+            btn.textContent = currentView === 'list' ? 'عرض حسب القطاع' : 'عرض القائمة';
+            
+            render();
+        };
+
+        document.getElementById('viewToggleBtn').addEventListener('click', toggleView);
+        document.getElementById('addBtn').addEventListener('click', () => {
+            alert('إضافة سهم - قريباً');
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
